@@ -210,6 +210,9 @@ Integer/MAX_VALUE
 ;; They only differ in their performance characteristics, and in a few data-structure-specific operations.
 ;; modify using accos, but index < count
 (assoc [1 2 3] 0 10)
+;; subvec
+(subvec [1 2 3] 0 2)
+
 
 
 ;; Set
@@ -263,6 +266,11 @@ Integer/MAX_VALUE
 (m :a)
 (m "c")
 (get m "c")
+
+;; Get keySet
+(map key {:a 1 :b 2})
+;; Get valueSet
+(map val {:a 1 :b 2})
 
 ;; int bigint short boolean str symbol keywords
 

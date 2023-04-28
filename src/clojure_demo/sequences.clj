@@ -3,15 +3,12 @@
 
 
 ;; Sequences
-
 (def xs #{{:a 11 :b 1 :c 1 :d 4}
           {:a 2 :b 12 :c 2 :d 6}
           {:a 3 :b 3 :c 3 :d 8 :f 42}})
-
 (def ys #{{:a 11 :b 11 :c 11 :e 5}
           {:a 12 :b 11 :c 12 :e 3}
           {:a 3 :b 3 :c 3 :e 7}})
-
 (join xs ys)
 
 ;; want to modify all elements of list
@@ -41,7 +38,7 @@
     (list)))
 
 
-;; recursion
+;; Recursion
 ;; Some part of the problem which has a known solution
 ;; A relationship which connects one part of the problem to the next
 
@@ -140,6 +137,10 @@
 (doc concat)
 (concat [1 2 3] [:a :b :c] '(4 5 6))
 
+;; into
+;; (into to from) can convert and concat any collections
+(into [1 2 3] [4 5 6])
+
 ;; interleave
 (doc interleave)
 (interleave [1 2 3] [:a :b :c])
@@ -197,11 +198,12 @@
 ;; partition
 (partition 2 [1 2 3 4 5])
 (partition-all 2 [1 2 3 4 5])
-;; overlapping
+;; overlapping with step
 (partition 2 1 [1 2 3 4 5])
 ;; partition-by
 (partition-by neg? [1 2 3 2 1 -1 -2 -3 -2 -1 1 2])
 (doc partition-all)
+
 
 
 
@@ -310,86 +312,6 @@
 
 
 
-
-
-;; write a function to find out if string is a palindrome
-;(vec string)
-;(first string)
-;(last string)
-;(rest string)
-;(take (- (count string) 1) string)
-
-(defn palindrome [string]
-  (if
-    (or (= (count string) 0) (= (count string) 1))
-    true
-    (if
-      (= (first string) (last string))
-      (palindrome (rest
-                    (take
-                      (- (count string) 1)
-                      string)))
-      false)))
-
-(defn palindrome [string]
-  (= (seq string) (reverse string)))
-
-(def string-palin (str "abcba"))
-(def string-not-palin (str "acnjdson"))
-
-
-
-
-
-;; find the number of cs in string
-(def string "abccasc")
-(defn find-c [string]
-  (count
-    (filter (fn [char]
-              (= char \c))
-            (seq string))))
-
-
-
-
-;; my-filter
-(defn my-filter [f, coll]
-  (reduce (fn [output ele]
-            (if (f ele)
-              (conj output ele)
-              output))
-          []
-          coll))
-
-(defn find-c-my-filter [string]
-  (count
-    (my-filter (fn [char]
-              (= char \c))
-            (seq string))))
-
-;; we can not use map to implement my-filter
-;; map can not change the size
-;; the output variable is immutable
-(defn my-filter [f coll]
-  (let [output []]
-    (map (fn [x]
-           (if (f x)
-             (conj output x)))
-         coll)
-    output))
-
-
-
-
-
-;; find the first 100 prime number
-
-
-
-
-
-
-
 ;; Rich Comment Blocks
 
 (comment
@@ -416,6 +338,8 @@
   (my-take-while pos? [1 -1 2 -2])
   ;; [1]
 
+
+  ;; Thread
   ;; macroexpand represent the thread form
   (macroexpand
     '(->> 1
@@ -450,17 +374,11 @@
   ;; or use get-in if key is str
 
 
-  ;; palindrome
-  (palindrome string-palin)
-  (palindrome string-not-palin)
+  ;; do
+  (do (defn f [] (+ 1 2)) (f))
+  (defn f [] (+ 1 2))
+  (f)
+  (do (def a "123") a)
 
-  ;; count c
-  (find-c string)
-
-  ;; how to delete the outer brackets
-  [(seq string)]
-
-  ;; my-filter
-  (find-c-my-filter string)
 
   )
