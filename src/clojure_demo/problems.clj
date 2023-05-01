@@ -1,6 +1,5 @@
 (ns clojure-demo.problems
-  (:gen-class))
-
+  (:use [clojure.repl]))
 
 ;; Palindrome
 ;; write a function to find out if string is a palindrome
@@ -21,11 +20,12 @@
                       string)))
       false)))
 
+
 (defn palindrome [string]
   (= (seq string) (reverse string)))
 
-(def string-palin (str "abcba"))
-(def string-not-palin (str "acnjdson"))
+(def palin-string (str "abcba"))
+(def not-palin-string (str "acnjdson"))
 
 
 
@@ -80,8 +80,8 @@
 (comment
 
   ;; palindrome
-  (palindrome string-palin)
-  (palindrome string-not-palin)
+  (palindrome palin-string)
+  (palindrome not-palin-string)
 
   ;; count c
   (find-c string)
@@ -94,4 +94,21 @@
 
   (let [n 10]
     (not-any? f '(1 2 3)))
+
+
+
+
+
+
   )
+
+
+
+
+
+
+
+
+
+
+

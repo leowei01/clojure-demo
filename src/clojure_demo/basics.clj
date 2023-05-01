@@ -1,5 +1,5 @@
 (ns clojure-demo.basics
-  (:gen-class))
+  (:use [clojure.repl]))
 
 
 ;; LISP
@@ -19,6 +19,7 @@ Long/MAX_VALUE
 (type (short 0))
 (type (byte 0))
 Integer/MAX_VALUE
+(str (+ 1) 2)
 
 ;; Floats use 32 bits, and Doubles use 64.
 ;; Doubles are the default in Clojure.
@@ -303,7 +304,7 @@ Integer/MAX_VALUE
     (get m id))
   ;; #_ can comment out an expression
 
-
+  (doc +)
 
 
   )

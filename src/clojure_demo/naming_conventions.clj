@@ -1,5 +1,5 @@
 (ns clojure-demo.naming-conventions
-  (:gen-class))
+  (:use [clojure.repl]))
 
 (def sample-person {:awards [1 2 3]})
 

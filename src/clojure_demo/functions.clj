@@ -1,5 +1,5 @@
 (ns clojure-demo.functions
-  (:gen-class))
+  (:use [clojure.repl]))
 
 
 ;; Functions
