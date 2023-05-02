@@ -10,32 +10,59 @@
       (str/split-lines)))
 
 
-(defn sum-2020->mutiply
-  "using set to find the complement"
-  [xs]
-  (->>
-    (let
-      [xs          (map #(Integer/parseInt %) xs)
-       s           (set xs)
-       complement? #(contains? s (- 2020 %))]
-      (filter complement? xs))
-    (first)
-    (#(* % (- 2020 %)))))
+(defn strings->integers [strings]
+  "parsing strings to integers"
+  (let
+    [string->integer (fn [x] (Integer/parseInt x))]
+    (map string->integer strings)))
 
+(defn seq->set [seq]
+  "convert sequence to set"
+  (set seq))
+
+(defn seq->map [seq]
+  "convert sequence to map"
+  (frequencies seq))
+
+(defn complement [x sum]
+  "calculate complement"
+  (- sum x))
+
+(defn complement-in-set? [x sum seq]
+  "detect whether the complement is in the sequence (using set)"
+  (let
+    [complement (complement x sum)
+     s (seq->set seq)]
+    (contains? s complement)))
+
+(defn complement-in-map? [x sum seq]
+  "detect whether the complement is in the sequence (using map)"
+  (let
+    [complement (complement x sum)
+     m (seq->map seq)]
+    (and (contains? m complement)
+         (or (-> sum (/ 2) (= x) (not))
+             (-> x m (> 1))))))
+
+(defn filter-complement [sum strings]
+  "filter x for which both x and its complement are in the sequence"
+  (let
+    [ints (strings->integers strings)]
+    (->> ints
+         (filter (fn [x] (complement-in-set? x sum ints))))))
+
+(defn int-complement-multiply [x sum]
+  "multiply x and its complement"
+  (->> (-> x
+           (complement sum))
+       (* x)))
 
 (defn sum-2020->mutiply
-  "using map to find the complement,
-  avoid the complement is itself"
-  [xs]
-  (->>
-    (let
-      [xs          (map #(Integer/parseInt %) xs)
-       m           (frequencies xs)
-       complement? #(and (contains? m (- 2020 %))
-                         (or (not (= % 1010)) (> (get m %) 1)))]
-      (filter complement? xs))
-    (first)
-    (#(* % (- 2020 %)))))
+  [strings sum]
+  (-> (->> strings
+           (filter-complement sum)
+           (first))
+    (int-complement-multiply sum)))
 
 
 
@@ -52,7 +79,7 @@
   ;; input
   (def sample-entries (file->seq "aoc2020/day1/day1-input.txt"))
 
-  (sum-2020->mutiply sample-entries)
+  (sum-2020->mutiply sample-entries 2020)
   #_=> 567171
 
 
