@@ -1,101 +1,53 @@
 (ns aoc2020.day1
   (:require [aoc2020.util :refer [file->seq]]))
 
-
-;; part 1
-
-(defn strs->ints [strs]
+(defn parse-s
   "parsing strings to integers"
-  (let [str->int (fn [str]
-                   (Integer/parseInt str))]
-    (map str->int strs)))
+  [s]
+  (map (fn [str]
+         (parse-long str))
+       s))
 
-(defn int->compl [n sum]
+(defn compl
   "calculate complement"
+  [sum n]
   (- sum n))
 
-(defn compl-in-set? [n sum s]
-  "detect whether the complement is in the sequence (using set)"
-  (let [compl (int->compl n sum)]                           ; calculate complement
-    (contains? s compl)))                                   ; check if exist in set
-
-(defn int->int*compl [n sum]
+(defn product-of-compl
   "multiply x and its complement"
-  (if n                                                     ; if n is not nil
-    (let [compl (int->compl n sum)]                         ; calculate complement
-      (* n compl))                                          ; multiply num and its complement
-    nil))
+  [sum n]
+  (when n
+    (* n (compl sum n))))
 
-(defn two-sum [sum strings]
-  "filter x for which both x and its complement are in the sequence
-  using set: complement-in-set?
-  using map: complement-in-map?"
-  (let [nums (strs->ints strings)                           ; parse strings
-        s (set nums)]                                       ; covert to set
-    (-> (->> nums
-             (filter (fn [n]
-                       (compl-in-set? n sum s)))            ; filter whose complement in the set
-             (first))                                       ; just select one (maybe nil)
-        (int->int*compl sum))))                             ; multiply num and its complement
-
-;(defn compl-in-map? [n sum m]
-;  "detect whether the complement is in the sequence (using map)"
-;  (let [compl (- sum n)]
-;    (and (contains? m compl)
-;         (or (-> sum (/ 2) (= n) (not))
-;             (-> n m (> 1))))))
-
-;(defn filter-compl-in-seq [sum seq]
-;  "filter x for which both x and its complement are in the sequence
-;  using set: complement-in-set?
-;  using map: complement-in-map?"
-;  (let [s (set seq)]
-;    (filter (fn [n]
-;              (compl-in-set? n sum s))
-;       seq)))
+(defn two-sum
+  "filter x for which both x and its complement are in the sequence"
+  [sum s]
+  (let [nums         (->> s
+                          (parse-s)
+                          (set))
+        compl-in-entries? (fn [n]
+                       (contains? nums (compl sum n)))
+        res-num      (->> nums
+                          (filter compl-in-entries?)
+                          (first))]
+    (product-of-compl sum res-num)))
 
 
 
 
 
-;; part 2
-
-(defn compl-multiply [n sum strings]
-  "multiply complements using two-sum"
-  (let [compl (int->compl n sum)                            ; calculate complement
-        compl-product (two-sum compl strings)]              ; calculate complement product
-    (if compl-product                                       ; if has complement product
-      (* n compl-product)                                   ; multiply n and complement product
-      nil)))                                                ; otherwise return nil
-
-(defn three-sum [sum strings]
-  (let [nums (strs->ints strings)]                          ; parse strings
-    (->> (map (fn [n]
-                (compl-multiply n sum strings))
-              nums)                                         ; calculate complement product
-         (filter (fn [n] n))                                ; filter the non-nil result
-         (first))))                                         ; just select one
-
-;(defn compl-multiply-s [sum strings]
-;  (let [ints (strs->ints strings)]
-;    (map (fn [n]
-;           (let [compl (- sum n)]
-;             (two-sum compl strings)))
-;         ints)))
-;
-;(defn compl? [n compl-multiply]
-;  (if compl-multiply
-;    (* n compl-multiply)
-;    nil))
-;
-;(defn three-sum [sum strings]
-;  (let [ints (strings->integers strings)
-;        compl-multiply-s (compl-multiply-s sum strings)]
-;    (->> (map compl?
-;              ints
-;              compl-multiply-array)
-;         (filter (fn [n] n))
-;         (first))))
+(defn three-sum [sum s]
+  (let [nums             (parse-s s)
+        two-sum-res      (fn [n]
+                           (two-sum (compl sum n) s))
+        two-sum-res-s    (map two-sum-res nums)
+        product-of-compl (map (fn [n compl]
+                                (when compl (* n compl)))
+                              nums
+                              two-sum-res-s)]
+    (->> product-of-compl
+         (filter (fn [n] n))
+         (first))))
 
 
 (comment
@@ -106,7 +58,7 @@
   #_=> ["1721" "979" "366" "299" "675" "1456"]
 
   ;; input
-  (def sample-entries (file->seq "aoc2020/day1/day1-input.txt"))
+  (def sample-entries (file->seq "aoc2020/day1/input.txt"))
   #_=> [1531
         1959
         1344
@@ -114,30 +66,116 @@
         1275
         1729,,,]
 
+
   ;; part 1
 
   ;; decode/parse
+
+  (parse-s ["1721" "979" "366" "299" "675" "1456"])
+  #_=> (1721 979 366 299 675 1456)
+
   ;; calculate complement
-  ;; filter whose complement in set
-  ;; multiply n and n's complement
+
+  (compl 2020 1721)
+  #_=> 299
+
+  (mapv (partial compl 2020)
+        [1721 979 366 299 675 1456])
+  #_=> [299 1041 1654 1721 1345 564]
+
+  ;; filter whose complement in entries
+
+  (let [entry-s      (set [299 1041 1654 1721 1345 564])
+        compl-in-entries? (fn [n]
+                       (contains? entry-s (compl 2020 n)))]
+    (filter compl-in-entries? entry-s))
+  #_=> (299 1721)
+
+  (let [entry-s      (set [1 2 3 4])
+        compl-in-entries? (fn [n]
+                       (contains? entry-s (compl 10 n)))]
+    (filter compl-in-entries? entry-s))
+  #_=> ()
+
+  ;; product of n and n's complement
+
+  (product-of-compl 10 3)
+  #_=> 21
+
+  (mapv (partial product-of-compl 10)
+        [1 2 3 4])
+  #_=> [9 16 21 24]
+
+  ;; two-sum
 
   (two-sum 2020 sample-entries)
   #_=> 567171
 
 
-
   ;; part 2
 
-  ;; calculate complement --> the sum of two-sum
-  ;; multiply complements using two-sum
+  ;; calculate product of complements using two-sum
+
+  (let [s           ["1721" "979" "366" "299" "675" "1456"]
+        two-sum-res (fn [n]
+                      (two-sum (compl 2020 n) s))]
+    (two-sum-res 979))
+  #_=> 366 * 657 = 247050
+
+  (let [s    ["1721" "979" "366" "299" "675" "1456"]
+        nums (parse-s s)
+        two-sum-res (fn [n]
+                      (two-sum (compl 2020 n) s))]
+    (map two-sum-res nums))
+  #_=> (nil 247050 660825 nil 358314 nil)
+
+  ;; calculate n * product of complements
+
+  (map (fn [n compl]
+         (when compl (* n compl)))
+       [1721 979 366 299 675 1456]
+       [nil 247050 660825 nil 358314 nil])
+  #_=> (nil 241861950 241861950 nil 241861950 nil)
+
   ;; filter valid result
+
+  (->> [nil 241861950 241861950 nil 241861950 nil]
+       (filter (fn [n] n))
+       (first))
+  #_=> 241861950
+
+  ;; three-sum
 
   (three-sum 2020 sample-entries)
   #_=> 212428694
 
 
 
-
-
+  ;(defn compl-multiply
+  ;  "multiply complements using two-sum"
+  ;  [n sum strings]
+  ;  (let [compl         (int->compl n sum)
+  ;        compl-product (two-sum compl strings)]
+  ;    (when compl-product
+  ;      (* n compl-product))))
+  ;
+  ;(defn three-sum [sum strings]
+  ;  (let [nums (parse-entries strings)
+  ;        compls (map (fn [n]
+  ;                      (compl-multiply n sum strings))
+  ;                    nums)]
+  ;    (->> compls
+  ;         (filter (fn [n] n))
+  ;         (first))))
+  ;
+  ;(defn three-sum [sum strings]
+  ;  (let [nums (parse-entries strings)
+  ;        two-sum-res (->> nums
+  ;                 (map (fn [n]
+  ;                        [n (two-sum (- sum n) strings)])))
+  ;        res-num (->> two-sum-res
+  ;                     (filter (fn [n] (second n)))
+  ;                     (first))]
+  ;    (* (first res-num) (second res-num))))
 
   )
