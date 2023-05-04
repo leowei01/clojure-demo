@@ -1,5 +1,4 @@
-(ns clojure-demo.problems
-  (:use [clojure.repl]))
+(ns clojure-demo.sequencce-problems)
 
 ;; Palindrome
 ;; write a function to find out if string is a palindrome

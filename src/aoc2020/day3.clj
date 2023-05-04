@@ -1,29 +1,46 @@
 (ns aoc2020.day3
   (:require [aoc2020.util :refer [file->seq]]))
 
-(defn col-slope [col-number col]
-  (-> col
-      (+ 3)
-      (mod col-number)))
-
 (defn tree-at-pos? [grid row col]
   (let [location (-> row
                      grid
                      (get col))]
     (= \# location)))
 
-(defn count-tree [grid]
+(defn generate-row-s [{:keys [slope-dist row-number]}]
+  (->> (iterate (fn [row]
+                  (+ row (slope-dist :down)))
+                0)
+       (take-while (fn [row] (< row row-number)))))
+
+(defn generate-col-s [{:keys [slope-dist length-of-row-s col-number]}]
+  (->> (iterate (fn [col] (-> col
+                              (+ (slope-dist :right))
+                              (mod col-number)))
+                0)
+       (take length-of-row-s)))
+
+(defn tree-count [grid slope-dist]
   (let [row-number (count grid)
         col-number (count (first grid))
-        row-s      (->> (iterate inc 0)
-                        (take row-number))
-        col-s      (->> (iterate (partial col-slope col-number) 0)
-                        (take row-number))]
+        row-s      (generate-row-s {:slope-dist slope-dist
+                                    :row-number row-number})
+        col-s      (generate-col-s {:slope-dist      slope-dist
+                                    :length-of-row-s (count row-s)
+                                    :col-number      col-number})]
     (->> (map (partial tree-at-pos? grid)
               row-s
               col-s)
          (filter (fn [tree?] tree?))
          (count))))
+
+
+
+(defn product-of-tree-count [grid slope-dist-s]
+  (->> slope-dist-s
+       (map (fn [slope-dist]
+              (tree-count grid slope-dist)))
+       (reduce *)))
 
 
 (comment
@@ -52,12 +69,15 @@
 
   ;; part 1
 
+  (def slope-dist {:right 3 :down 1})
+
   ;; generate the row sequence, row plus 1 every time until reach the bottom
-  (take 10 (iterate inc 0))
+  (generate-row-s {:slope-dist slope-dist
+                   :row-number 10})
   #_=> (0 1 2 3 4 5 6 7 8 9)
 
   ;; generate the column sequence, column plus 3 every time and iterate cycle
-  (col-slope 5 0)
+  (
   #_=> 3
 
   (col-slope 5 3)
@@ -81,15 +101,19 @@
        (count))
 
   ;; count the tree
-  (count-tree sample-grid)
+  (tree-count sample-grid {:right 1 :down 1})
   #_=> 7
 
-  (count-tree grid)
+  (tree-count grid {:right 1 :down 1})
   #_=> 242
 
 
   ;; part 2
+  (def slope-dist-s [{:right 1 :down 1}
+                     {:right 3 :down 1}
+                     {:right 5 :down 1}
+                     {:right 7 :down 1}
+                     {:right 1 :down 2}])
 
-  (count-tree grid slope-row slope-col)
-  (reduce * number-of-trees-s)
+  (product-of-tree-count grid slope-dist-s)
   )
