@@ -2,51 +2,52 @@
   (:require [aoc2020.util :refer [file->seq]]
             [clojure.string :as str]))
 
-(defn parse-password-str-with-space [password-str]
+(defn parse-policy-password-str-with-space [password-str]
   (str/split password-str #" "))
 
 (defn parse-policy-with-dash [policy]
   (->> (str/split policy #"-")
        (mapv parse-long)))
 
-(defn valid-password-with-freq? [password-str]
-  (let [[policy ch pw] (parse-password-str-with-space password-str)
+(defn valid-password-with-freq? [policy-password-str]
+  (let [[policy letter pwd] (parse-policy-password-str-with-space policy-password-str)
         [lo hi] (parse-policy-with-dash policy)
-        ch      (first ch)
-        freqs   (frequencies (seq pw))
-        ch-freq (if (contains? freqs ch)
-                  (get freqs ch)
-                  0)]
-    (<= lo ch-freq hi)))
+        letter (first letter)
+        freqs  (frequencies (seq pwd))
+        {letter-freq letter :or {letter-freq 0}} freqs]
+    (<= lo letter-freq hi)))
 
-(defn count-of-valid-password-with-freq [password-str-s]
-  (->> password-str-s
+(defn count-of-valid-password-with-freq [policy-password-str-s]
+  (->> policy-password-str-s
        (filter valid-password-with-freq?)
        (count)))
 
 
 
-(defn ch-at-pos-equals? [ch pos password]
-  (-> (- pos 1)
-      ((partial get password))
-      (= ch)))
-
+(defn letter-at-pos-equals? [{:keys [letter pos password]}]
+  (let [pos-letter (get password (- pos 1))]
+    (= letter pos-letter)))
+∏
 (defn exactly-one? [pos1? pos2?]
   (let [both?   (and pos1? pos2?)
         either? (or pos1? pos2?)]
     (and (not both?) either?)))
 
-(defn valid-password-with-pos? [password-str]
-  (let [[policy ch pw] (parse-password-str-with-space password-str)
+(defn valid-policy-password-with-pos? [policy-password-str]
+  (let [[policy letter pwd] (parse-policy-password-str-with-space policy-password-str)
         [pos1 pos2] (parse-policy-with-dash policy)
-        ch    (first ch)
-        pos1? (ch-at-pos-equals? ch pos1 pw)
-        pos2? (ch-at-pos-equals? ch pos2 pw)]
+        letter (first letter)
+        pos1?  (letter-at-pos-equals? {:letter   letter
+                                       :pos      pos1
+                                       :password pwd})
+        pos2?  (letter-at-pos-equals? {:letter   letter
+                                       :pos      pos2
+                                       :password pwd})]
     (exactly-one? pos1? pos2?)))
 
-(defn count-of-valid-password-with-pos [password-str-s]
-  (->> password-str-s
-       (filter valid-password-with-pos?)
+(defn count-of-valid-password-with-pos [policy-password-str-s]
+  (->> policy-password-str-s
+       (filter valid-policy-password-with-pos?)
        (count)))
 
 
@@ -55,14 +56,14 @@
 
 (comment
 
-  (do (def sample-password-str-s (file->seq "aoc2020/day2/sample-input.txt"))
-      sample-password-str-s)
+  (do (def sample-policy-password-str-s (file->seq "aoc2020/day2/sample-input.txt"))
+      sample-policy-password-str-s)
   #_=> ["1-3 a: abcde"
         "1-3 b: cdefg"
         "2-9 c: ccccccccc"]
 
-  (do (def password-str-s (file->seq "aoc2020/day2/input.txt"))
-      password-str-s)
+  (do (def policy-password-str-s (file->seq "aoc2020/day2/input.txt"))
+      policy-password-str-s)
   #_=> [" 1-8 n: dpwpmhknmnlglhjtrbpx"
         "11-12 n: frpknnndpntnncnnnnn"
         "4-8 t: tmttdtnttkr"]
@@ -70,7 +71,7 @@
   ;; Part 1
 
   ;; split the entries with space to get [policy ch password]
-  (parse-password-str-with-space (first sample-password-str-s))
+  (parse-policy-password-str-with-space (first sample-policy-password-str-s))
   #_=> ["1-3" "a:" "abcde"]
 
   ;; split the policy entry with dash "-" and convert string into integer to get [lowest highest]
@@ -88,42 +89,36 @@
   #_=> {\a 2, \b 1, \c 1, \d 1}
 
   ;; get the frequency of ch (if there is no ch in password, frequency = 0)
-  (let [freqs (frequencies "abcde")]
-    (if (contains? freqs \a)
-      (get freqs \a)
-      0))
+  (let [freqs (frequencies "abcde")
+        {letter-freq \a :or {letter-freq 0}} freqs]
+    letter-freq)
   #_=> 1
 
-  (let [freqs (frequencies "abcde")]
-    (if (contains? freqs \z)
-      (get freqs \z)
-      0))
+  (let [freqs (frequencies "abcde")
+        {letter-freq \z :or {letter-freq 0}} freqs]
+    letter-freq)
   #_=> 0
 
   ;; check if lowest <= frequency <= highest
-  (let [lo   1
-        freq 1
-        hi   3]
+  (let [[lo freq hi] [1 1 3]]
     (<= lo freq hi))
   #_=> true
 
-  (let [lo   1
-        freq 4
-        hi   3]
+  (let [[lo freq hi] [1 4 3]]
     (<= lo freq hi))
   #_=> false
 
   ;; filter the valid passwords and count
-  (->> sample-password-str-s
-       (filter valid-password-with-freq?)
+  (->> sample-policy-password-str-s
+       (filter valid-policy-password-with-freq?)
        (count))
   #_=> 2
 
   ;; count of valid passwords
-  (count-of-valid-password-with-freq sample-password-str-s)
+  (count-of-valid-password-with-freq sample-policy-password-str-s)
   #_=> 2
 
-  (count-of-valid-password-with-freq password-str-s)
+  (count-of-valid-password-with-freq policy-password-str-s)
   #_=> 445
 
 
@@ -131,7 +126,7 @@
   ;; Part 2
 
   ;; parse passwords with space to get [policy ch password]
-  (parse-password-str-with-space (first sample-password-str-s))
+  (parse-policy-password-str-with-space (first sample-policy-password-str-s))
   #_=> ["1-3" "a:" "abcde"]
 
   ;; parse policy with dash "-" and convert string into int to get [position1 position2]
@@ -139,16 +134,14 @@
   #_=> [1 3]
 
   ;; check if the position1 and position2 character is equal to ch
-  (let [pos      1
-        ch       \a
-        password "abcde"]
-    (ch-at-pos-equals? ch pos password))
+  (letter-at-pos-equals? {:letter   \a
+                          :pos      1
+                          :password "abcde"})
   #_=> true
 
-  (let [pos      3
-        ch       \a
-        password "abcde"]
-    (ch-at-pos-equals? ch pos password))
+  (letter-at-pos-equals? {:letter   \a
+                          :pos      3
+                          :password "abcde"})
   #_=> false
 
   ;; check if there is exactly one of these positions is ch
@@ -168,16 +161,16 @@
   #_=> false
 
   ;; filter the true entries and count
-  (->> sample-password-str-s
-       (filter valid-password-with-pos?)
+  (->> sample-policy-password-str-s
+       (filter valid-policy-password-with-pos?)
        (count))
   #_=> 1
 
   ;; count-of-valid-password2
-  (count-of-valid-password-with-pos sample-password-str-s)
+  (count-of-valid-password-with-pos sample-policy-password-str-s)
   #_=> 1
 
-  (count-of-valid-password-with-pos password-str-s)
+  (count-of-valid-password-with-pos policy-password-str-s)
   #_=> 491
 
   )
