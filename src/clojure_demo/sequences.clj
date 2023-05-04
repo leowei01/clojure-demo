@@ -1,5 +1,5 @@
 (ns clojure-demo.sequences
-  (:gen-class))
+  (:use [clojure.repl]))
 
 
 ;; Sequences
@@ -126,12 +126,15 @@
      [:a :b :c])
 ;; (iterate) is infinite, [a b c] is finite, map will stop at 2
 
-
 ;; map-indexed
 (doc map-indexed)
 (map-indexed (fn [index element] (str index ". " element))
              ["erlang" "ruby" "haskell"])
 
+;; (apply f [1 2 3]) --> (f 1 2 3)
+;; Applies f to the argument list formed by prepending intervening arguments to args.
+(max [1 2 3])                                               ;[1 2 3]
+(apply max [1 2 3])                                         ;3
 
 ;; concat: tack sequence onto the end of another
 (doc concat)
@@ -154,13 +157,6 @@
 ;; Strings are sequences too! Each element of a string is a character, written \f
 (apply str (reverse "woolf"))
 (doc apply)
-
-;; (apply f [1 2 3]) --> (f 1 2 3)
-;; Applies f to the argument list formed by prepending intervening arguments to args.
-(max [1 2 3])                                               ;[1 2 3]
-(apply max [1 2 3])                                         ;3
-;; In this case, 'max' has received one vector argument
-;; If you would like to find the largest item **within** the vector, you would need to use `apply`
 
 ;; break string into chars
 (seq "abcd")
@@ -311,7 +307,6 @@
 
 
 
-
 ;; Rich Comment Blocks
 
 (comment
@@ -379,6 +374,74 @@
   (defn f [] (+ 1 2))
   (f)
   (do (def a "123") a)
+
+
+
+  ;; Quiz
+  (map inc '(1 2 3))
+  #_=> (2 3 4)
+
+  ;; map --> list, mapv --> vector
+  (mapv inc [1 2 3])
+
+  (take 5 (iterate inc 1))
+
+  (repeat 5 :a)
+
+  (repeat 3 (rand))
+  (take 3 (repeatedly rand))
+  (repeatedly 3 rand)
+  (iterate inc 0)
+
+  (range 5 30 5)
+
+  ;; cycle
+  (take 9 (cycle [1 2 3]))
+
+  (map +
+       [1 2 3]
+       [4 5 6])
+
+  (map-indexed str [:a :b :c])
+  (map-indexed (f [index element]) coll)
+
+  (concat [1 2 3] [:a :b])
+  (into [1 2 3] [:a :b])
+
+  (interleave [:a :b :c] [1 2 3])
+
+  (interpose :a [1 2 3 4])
+
+  (reverse [1 2 3 4])
+
+  (apply str (reverse "hello"))
+
+  ;; option+delete
+  (apply str (shuffle (seq "hello")))
+
+  (filter even? (range 0 10))
+
+  (remove string? [1 2 :a :b "cat"])
+
+  (partition 2 [:a 1 :b 2 :c 3])
+
+  (partition-by pos? [1 2 3 2 1 -1 -2 -3 -2 -1 1 2])
+
+  (frequencies [:a :a :a :b :b :c])
+
+  (group-by count ["a" "as" "asd" "aa" "asdf" "qwer"])
+
+  (frequencies ["a" "as" "asd" "aa" "asdf" "qwer"])
+
+  (reduce + [1 2 3 4 5])
+
+  ;; reduce
+  (reductions + [1 2 3 4])
+
+  (reverse [1 2 3 4])
+  (reduce (fn [x y] (conj x y)) '() [1 2 3 4])
+  ;; reduce + conj
+  (into '() [1 2 3 4])
 
 
   )
