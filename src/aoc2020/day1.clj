@@ -1,64 +1,65 @@
 (ns aoc2020.day1
   (:require [aoc2020.util :refer [file->seq]]))
 
-(defn parse-s
+(defn parse-entry-str-s
   "parsing strings to integers"
-  [s]
-  (map (fn [str]
-         (parse-long str))
-       s))
+  [entry-str-s]
+  (mapv parse-long entry-str-s))
 
-(defn compl
+(defn complement
   "calculate complement"
-  [sum n]
-  (- sum n))
+  [sum entry]
+  (- sum entry))
 
-(defn product-of-compl
+(defn product-of-complement
   "multiply x and its complement"
-  [sum n]
-  (when n
-    (* n (compl sum n))))
+  [sum entry]
+  (when entry
+    (* entry (complement sum entry))))
+
+(defn complement-in-entries? [sum entry entry-s]
+  (-> (complement sum entry)
+      ((partial contains? entry-s))))
 
 (defn two-sum
   "filter x for which both x and its complement are in the sequence"
-  [sum s]
-  (let [nums         (->> s
-                          (parse-s)
-                          (set))
-        compl-in-entries? (fn [n]
-                       (contains? nums (compl sum n)))
-        res-num      (->> nums
-                          (filter compl-in-entries?)
+  [sum entry-s]
+  (let [entry-s      (set entry-s)
+        entry-result (->> entry-s
+                          (filter (fn [entry]
+                                    (complement-in-entries? sum entry entry-s)))
                           (first))]
-    (product-of-compl sum res-num)))
+    (product-of-complement sum entry-result)))
 
 
 
 
 
-(defn three-sum [sum s]
-  (let [nums             (parse-s s)
-        two-sum-res      (fn [n]
-                           (two-sum (compl sum n) s))
-        two-sum-res-s    (map two-sum-res nums)
-        product-of-compl (map (fn [n compl]
-                                (when compl (* n compl)))
-                              nums
-                              two-sum-res-s)]
-    (->> product-of-compl
-         (filter (fn [n] n))
+(defn three-sum [sum entry-s]
+  (let [two-sum-result        (fn [entry]
+                                (two-sum (complement sum entry) entry-s))
+        two-sum-result-s      (map two-sum-result entry-s)
+        product-of-complement (map (fn [entry complement]
+                                     (when complement (* entry complement)))
+                                   entry-s
+                                   two-sum-result-s)]
+    (->> product-of-complement
+         (filter (fn [entry] entry))
          (first))))
 
 
 (comment
 
   ;; sample-input
-  (do (def sample-entries (file->seq "aoc2020/day1/sample-input.txt"))
+  (do (def sample-entries (->> (file->seq "aoc2020/day1/sample-input.txt")
+                               (parse-entry-str-s)))
       sample-entries)
   #_=> ["1721" "979" "366" "299" "675" "1456"]
 
   ;; input
-  (def sample-entries (file->seq "aoc2020/day1/input.txt"))
+  (do (def entries (->> (file->seq "aoc2020/day1/input.txt")
+                        (parse-entry-str-s)))
+      entries)
   #_=> [1531
         1959
         1344
@@ -70,83 +71,86 @@
   ;; part 1
 
   ;; decode/parse
-
-  (parse-s ["1721" "979" "366" "299" "675" "1456"])
-  #_=> (1721 979 366 299 675 1456)
+  (parse-entry-str-s ["-1" "1" "2" "3" "10"])
+  #_=> [-1 1 2 3 10]
 
   ;; calculate complement
+  (complement 100 9)
+  #_=> 91
 
-  (compl 2020 1721)
-  #_=> 299
+  (mapv (partial complement 100)
+        [-1 0 11 1000])
+  #_=> [101 100 89 -900]
 
-  (mapv (partial compl 2020)
-        [1721 979 366 299 675 1456])
-  #_=> [299 1041 1654 1721 1345 564]
+  ;; find out if complement is in entry sequence
+  (complement-in-entries? 10 1 #{1 2 3 4})
+  #_=> false
 
-  ;; filter whose complement in entries
+  (complement-in-entries? 10 1 #{1 2 3 9})
+  #_=> true
 
-  (let [entry-s      (set [299 1041 1654 1721 1345 564])
-        compl-in-entries? (fn [n]
-                       (contains? entry-s (compl 2020 n)))]
-    (filter compl-in-entries? entry-s))
-  #_=> (299 1721)
+  ;; filter entry whose complement is in entries
+  (let [entry-s #{1 2 3 9}]
+    (filter (fn [entry]
+              (complement-in-entries? 10 entry entry-s))
+            entry-s))
+  #_=> (1 9)
 
-  (let [entry-s      (set [1 2 3 4])
-        compl-in-entries? (fn [n]
-                       (contains? entry-s (compl 10 n)))]
-    (filter compl-in-entries? entry-s))
+  (let [entry-s #{1 2 3 4}]
+    (filter (fn [entry]
+              (complement-in-entries? 10 entry entry-s))
+            entry-s))
   #_=> ()
 
   ;; product of n and n's complement
-
-  (product-of-compl 10 3)
+  (product-of-complement 10 3)
   #_=> 21
 
-  (mapv (partial product-of-compl 10)
+  (mapv (partial product-of-complement 10)
         [1 2 3 4])
   #_=> [9 16 21 24]
 
   ;; two-sum
-
   (two-sum 2020 sample-entries)
+  #_=> 514579
+
+  (two-sum 2020 entries)
   #_=> 567171
 
 
   ;; part 2
 
   ;; calculate product of complements using two-sum
+  (let [entry-s        [1 2 3 5]
+        two-sum-result (fn [entry]
+                         (two-sum (complement 6 entry) entry-s))]
+    (two-sum-result 1))
+  #_=> 2 * 3 = 6
 
-  (let [s           ["1721" "979" "366" "299" "675" "1456"]
-        two-sum-res (fn [n]
-                      (two-sum (compl 2020 n) s))]
-    (two-sum-res 979))
-  #_=> 366 * 657 = 247050
+  (let [entry-s        [1 2 3 5]
+        two-sum-result (fn [entry]
+                         (two-sum (complement 6 entry) entry-s))]
+    (map two-sum-result entry-s))
+  #_=> (6 3 2 nil)
 
-  (let [s    ["1721" "979" "366" "299" "675" "1456"]
-        nums (parse-s s)
-        two-sum-res (fn [n]
-                      (two-sum (compl 2020 n) s))]
-    (map two-sum-res nums))
-  #_=> (nil 247050 660825 nil 358314 nil)
-
-  ;; calculate n * product of complements
-
-  (map (fn [n compl]
-         (when compl (* n compl)))
-       [1721 979 366 299 675 1456]
-       [nil 247050 660825 nil 358314 nil])
-  #_=> (nil 241861950 241861950 nil 241861950 nil)
+  ;; calculate n * product of complements (ignore nil)
+  (map (fn [entry complement]
+         (when complement (* entry complement)))
+       [1 2 3 5]
+       [6 3 2 nil])
+  #_=> (6 6 6 nil)
 
   ;; filter valid result
-
-  (->> [nil 241861950 241861950 nil 241861950 nil]
-       (filter (fn [n] n))
+  (->> [6 6 6 nil]
+       (filter (fn [entry] entry))
        (first))
-  #_=> 241861950
+  #_=> 6
 
   ;; three-sum
-
   (three-sum 2020 sample-entries)
+  #_=> 241861950
+
+  (three-sum 2020 entries)
   #_=> 212428694
 
 
