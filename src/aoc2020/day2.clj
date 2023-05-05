@@ -2,53 +2,59 @@
   (:require [aoc2020.util :refer [file->seq]]
             [clojure.string :as str]))
 
-(defn parse-policy-password-str-with-space [password-str]
-  (str/split password-str #" "))
+(defn parse-policy-password-str [policy-password-str]
+  (let [[policy letter pwd] (str/split policy-password-str #" ")
+        [lo hi] (->> (str/split policy #"-")
+                     (mapv parse-long))
+        letter (first letter)]
+    {:policy {:lo     lo
+              :hi     hi
+              :letter letter}
+     :pwd    pwd}))
 
-(defn parse-policy-with-dash [policy]
-  (->> (str/split policy #"-")
-       (mapv parse-long)))
-
-(defn valid-password-with-freq? [policy-password-str]
-  (let [[policy letter pwd] (parse-policy-password-str-with-space policy-password-str)
-        [lo hi] (parse-policy-with-dash policy)
-        letter (first letter)
-        freqs  (frequencies (seq pwd))
+(defn valid-password? [policy-password]
+  (let [{:keys [policy pwd]} policy-password
+        {:keys [lo hi letter]} policy
+        freqs (frequencies (seq pwd))
         {letter-freq letter :or {letter-freq 0}} freqs]
     (<= lo letter-freq hi)))
 
-(defn count-of-valid-password-with-freq [policy-password-str-s]
-  (->> policy-password-str-s
-       (filter valid-password-with-freq?)
-       (count)))
+(defn count-valid-password [policy-password-str-s]
+  (let [policy-password-s (->> policy-password-str-s
+                               (map parse-policy-password-str))]
+    (->> policy-password-s
+         (filter valid-password?)
+         (count))))
 
 
 
-(defn letter-at-pos-equals? [{:keys [letter pos password]}]
-  (let [pos-letter (get password (- pos 1))]
-    (= letter pos-letter)))
-∏
-(defn exactly-one? [pos1? pos2?]
-  (let [both?   (and pos1? pos2?)
-        either? (or pos1? pos2?)]
+(defn parse-policy-password-str [policy-password-str]
+  (let [[policy letter pwd] (str/split policy-password-str #" ")
+        [pos1 pos2] (->> (str/split policy #"-")
+                         (mapv parse-long))
+        letter (first letter)]
+    {:policy {:pos1   pos1
+              :pos2   pos2
+              :letter letter}
+     :pwd    pwd}))
+
+(defn valid-password? [policy-password]
+  (let [{:keys [policy pwd]} policy-password
+        {:keys [pos1 pos2 letter]} policy
+        letter-pos1 (get pwd (- pos1 1))
+        letter-pos2 (get pwd (- pos2 1))
+        pos1?       (= letter letter-pos1)
+        pos2?       (= letter letter-pos2)
+        both?       (and pos1? pos2?)
+        either?     (or pos1? pos2?)]
     (and (not both?) either?)))
 
-(defn valid-policy-password-with-pos? [policy-password-str]
-  (let [[policy letter pwd] (parse-policy-password-str-with-space policy-password-str)
-        [pos1 pos2] (parse-policy-with-dash policy)
-        letter (first letter)
-        pos1?  (letter-at-pos-equals? {:letter   letter
-                                       :pos      pos1
-                                       :password pwd})
-        pos2?  (letter-at-pos-equals? {:letter   letter
-                                       :pos      pos2
-                                       :password pwd})]
-    (exactly-one? pos1? pos2?)))
-
-(defn count-of-valid-password-with-pos [policy-password-str-s]
-  (->> policy-password-str-s
-       (filter valid-policy-password-with-pos?)
-       (count)))
+(defn count-valid-password [policy-password-str-s]
+  (let [policy-password-s (->> policy-password-str-s
+                               (map parse-policy-password-str))]
+    (->> policy-password-s
+         (filter valid-password?)
+         (count))))
 
 
 
@@ -70,107 +76,71 @@
 
   ;; Part 1
 
-  ;; split the entries with space to get [policy ch password]
-  (parse-policy-password-str-with-space (first sample-policy-password-str-s))
-  #_=> ["1-3" "a:" "abcde"]
+  ;; parse strings into policies and passwords
+  ;; validate password based on frequency policy
+  ;; filter and count the valid passwords
 
-  ;; split the policy entry with dash "-" and convert string into integer to get [lowest highest]
-  (parse-policy-with-dash "1-3")
-  #_=> [1 3]
 
-  (parse-policy-with-dash "1-12")
-  #_=> [1 12]
+  ;; parse strings into policies and passwords
+  (parse-policy-password-str (first sample-policy-password-str-s))
+  #_=> {:policy {:lo     1,
+                 :hi     3,
+                 :letter \a},
+        :pwd    "abcde"}
 
-  ;; calculate the frequencies of characters in password
-  (frequencies "abcde")
-  #_=> {\a 1, \b 1, \c 1, \d 1, \e 1}
-
-  (frequencies "abcda")
-  #_=> {\a 2, \b 1, \c 1, \d 1}
-
-  ;; get the frequency of ch (if there is no ch in password, frequency = 0)
-  (let [freqs (frequencies "abcde")
-        {letter-freq \a :or {letter-freq 0}} freqs]
-    letter-freq)
-  #_=> 1
-
-  (let [freqs (frequencies "abcde")
-        {letter-freq \z :or {letter-freq 0}} freqs]
-    letter-freq)
-  #_=> 0
-
-  ;; check if lowest <= frequency <= highest
-  (let [[lo freq hi] [1 1 3]]
-    (<= lo freq hi))
+  ;; validate password based on frequency policy
+  (valid-password? {:policy {:lo     1
+                             :hi     3
+                             :letter \a}
+                    :pwd    "abcde"})
   #_=> true
 
-  (let [[lo freq hi] [1 4 3]]
-    (<= lo freq hi))
+  (valid-password? {:policy {:lo     1
+                             :hi     3
+                             :letter \z}
+                    :pwd    "abcde"})
   #_=> false
 
-  ;; filter the valid passwords and count
-  (->> sample-policy-password-str-s
-       (filter valid-policy-password-with-freq?)
-       (count))
+  ;; filter and count the valid passwords
+  (count-valid-password sample-policy-password-str-s)
   #_=> 2
 
-  ;; count of valid passwords
-  (count-of-valid-password-with-freq sample-policy-password-str-s)
-  #_=> 2
-
-  (count-of-valid-password-with-freq policy-password-str-s)
+  (count-valid-password policy-password-str-s)
   #_=> 445
 
 
 
   ;; Part 2
 
-  ;; parse passwords with space to get [policy ch password]
-  (parse-policy-password-str-with-space (first sample-policy-password-str-s))
-  #_=> ["1-3" "a:" "abcde"]
+  ;; parse strings into policies and passwords
+  ;; validate password based on position policy
+  ;; filter and count the valid passwords
 
-  ;; parse policy with dash "-" and convert string into int to get [position1 position2]
-  (parse-policy-with-dash "1-3")
-  #_=> [1 3]
+  ;; parse strings into policies and passwords
+  (parse-policy-password-str (first sample-policy-password-str-s))
+  #_=> {:policy {:pos1   1,
+                 :pos2   3,
+                 :letter \a},
+        :pwd    "abcde"}
 
-  ;; check if the position1 and position2 character is equal to ch
-  (letter-at-pos-equals? {:letter   \a
-                          :pos      1
-                          :password "abcde"})
+  ;; validate password based on position policy
+  (valid-password? {:policy {:pos1   1
+                             :pos2   3
+                             :letter \a}
+                    :pwd    "abcde"})
   #_=> true
 
-  (letter-at-pos-equals? {:letter   \a
-                          :pos      3
-                          :password "abcde"})
+  (valid-password? {:policy {:pos1   1
+                             :pos2   3
+                             :letter \a}
+                    :pwd    "abade"})
   #_=> false
 
-  ;; check if there is exactly one of these positions is ch
-  (let [pos1? true
-        pos2? false]
-    (exactly-one? pos1? pos2?))
-  #_=> true
-
-  (let [pos1? true
-        pos2? true]
-    (exactly-one? pos1? pos2?))
-  #_=> false
-
-  (let [pos1? false
-        pos2? false]
-    (exactly-one? pos1? pos2?))
-  #_=> false
-
-  ;; filter the true entries and count
-  (->> sample-policy-password-str-s
-       (filter valid-policy-password-with-pos?)
-       (count))
+  ;; filter and count the valid passwords
+  (count-valid-password sample-policy-password-str-s)
   #_=> 1
 
-  ;; count-of-valid-password2
-  (count-of-valid-password-with-pos sample-policy-password-str-s)
-  #_=> 1
-
-  (count-of-valid-password-with-pos policy-password-str-s)
+  (count-valid-password policy-password-str-s)
   #_=> 491
 
   )
