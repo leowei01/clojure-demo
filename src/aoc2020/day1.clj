@@ -17,7 +17,8 @@
   (when entry
     (* entry (complement sum entry))))
 
-(defn complement-in-entries? [sum entry entry-s]
+(defn complement-in-entries?
+  [sum entry entry-s]
   (-> (complement sum entry)
       ((partial contains? entry-s))))
 
@@ -35,7 +36,8 @@
 
 
 
-(defn three-sum [sum entry-s]
+(defn three-sum
+  [sum entry-s]
   (let [two-sum-result        (fn [entry]
                                 (two-sum (complement sum entry) entry-s))
         two-sum-result-s      (map two-sum-result entry-s)

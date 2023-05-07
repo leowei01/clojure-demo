@@ -2,7 +2,8 @@
   (:require [aoc2020.util :refer [file->seq]]
             [clojure.string :as str]))
 
-(defn parse-policy-password-str [policy-password-str]
+(defn parse-policy-password-str
+  [policy-password-str]
   (let [[policy letter pwd] (str/split policy-password-str #" ")
         [lo hi] (->> (str/split policy #"-")
                      (mapv parse-long))
@@ -12,14 +13,16 @@
               :letter letter}
      :pwd    pwd}))
 
-(defn valid-password? [policy-password]
+(defn valid-password?
+  [policy-password]
   (let [{:keys [policy pwd]} policy-password
         {:keys [lo hi letter]} policy
         freqs (frequencies (seq pwd))
         {letter-freq letter :or {letter-freq 0}} freqs]
     (<= lo letter-freq hi)))
 
-(defn count-valid-password [policy-password-str-s]
+(defn count-valid-password
+  [policy-password-str-s]
   (let [policy-password-s (->> policy-password-str-s
                                (map parse-policy-password-str))]
     (->> policy-password-s
@@ -28,7 +31,8 @@
 
 
 
-(defn parse-policy-password-str [policy-password-str]
+(defn parse-policy-password-str
+  [policy-password-str]
   (let [[policy letter pwd] (str/split policy-password-str #" ")
         [pos1 pos2] (->> (str/split policy #"-")
                          (mapv parse-long))
@@ -38,7 +42,8 @@
               :letter letter}
      :pwd    pwd}))
 
-(defn valid-password? [policy-password]
+(defn valid-password?
+  [policy-password]
   (let [{:keys [policy pwd]} policy-password
         {:keys [pos1 pos2 letter]} policy
         letter-pos1 (get pwd (- pos1 1))
@@ -49,7 +54,8 @@
         either?     (or pos1? pos2?)]
     (and (not both?) either?)))
 
-(defn count-valid-password [policy-password-str-s]
+(defn count-valid-password
+  [policy-password-str-s]
   (let [policy-password-s (->> policy-password-str-s
                                (map parse-policy-password-str))]
     (->> policy-password-s
