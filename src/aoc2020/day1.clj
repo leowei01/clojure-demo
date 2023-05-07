@@ -11,12 +11,6 @@
   [sum entry]
   (- sum entry))
 
-(defn product-of-complement
-  "multiply x and its complement"
-  [sum entry]
-  (when entry
-    (* entry (complement sum entry))))
-
 (defn complement-in-entries?
   [sum entry entry-s]
   (-> (complement sum entry)
@@ -30,7 +24,10 @@
                           (filter (fn [entry]
                                     (complement-in-entries? sum entry entry-s)))
                           (first))]
-    (product-of-complement sum entry-result)))
+    (when entry-result
+      (-> entry-result
+          (partial complement sum)
+          (* entry-result)))))
 
 
 
@@ -108,14 +105,6 @@
   #_=> ()
 
   ;; calculate product of n and n's complement
-  (product-of-complement 10 3)
-  #_=> 21
-
-  (mapv (partial product-of-complement 10)
-        [1 2 3 4])
-  #_=> [9 16 21 24]
-
-  ;; two-sum
   (two-sum 2020 sample-entries)
   #_=> 514579
 
