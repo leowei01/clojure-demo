@@ -1,52 +1,47 @@
 (ns aoc2020.day3-copy
   (:require [aoc2020.util :refer [file->seq]]))
 
-(defn tree-at-pos?
-  [grid position]
-  (let [row      (first position)
-        col      (second position)
-        location (-> row
-                     grid
-                     (get col))]
-    (= \# location)))
-
 (defn position-s
-  [grid slope-dist]
-  (let [row-number (count grid)
-        col-number (count (first grid))
-        row-s      (->> (iterate (fn [row]
-                                   (+ row (slope-dist :down)))
-                                 0)
-                        (take-while (fn [row] (< row row-number))))
-        col-s      (->> (iterate (fn [col]
-                                   (-> col
-                                       (+ (slope-dist :right))
-                                       (mod col-number)))
-                                 0)
-                        (take (count row-s)))]
+  [slope-dist]
+  (let [row-s (take-nth (slope-dist :down) (range))
+        col-s (take-nth (slope-dist :right) (range))]
     (map (fn [row col] [row col])
          row-s
          col-s)))
 
+(defn tree-at-pos?
+  [grid-template position]
+  (let [col-number (-> grid-template
+                       (first)
+                       (count))
+        row        (first position)
+        col        (mod (second position) col-number)
+        location   (-> row
+                       grid-template
+                       (get col))]
+    (= \# location)))
+
 (defn tree-count
-  [grid slope-dist]
-  (let [position-s (position-s grid slope-dist)]
-    (->> (filter (partial tree-at-pos? grid)
-                 position-s)
+  [grid-template slope-dist]
+  (let [row-number (count grid-template)]
+    (->> slope-dist
+         (position-s)
+         (take-while (fn [pos] (< (first pos) row-number)))
+         (filter (partial tree-at-pos? grid-template))
          (count))))
 
 
 
 (defn product-of-tree-count
-  [grid slope-dist-s]
+  [grid-template slope-dist-s]
   (->> (map (fn [slope-dist]
-              (tree-count grid slope-dist))
+              (tree-count grid-template slope-dist))
             slope-dist-s)
        (reduce *)))
 
 
 (comment
-  (do (def sample-grid (file->seq "aoc2020/day3/sample-input.txt")) sample-grid)
+  (do (def sample-grid-template (file->seq "aoc2020/day3/sample-input.txt")) sample-grid-template)
   #_=> ["..##......."
         "#...#...#.."
         ".#....#..#."
@@ -59,7 +54,7 @@
         "#...##....#"
         ".#..#...#.#"]
 
-  (do (def grid (file->seq "aoc2020/day3/input.txt")) grid)
+  (do (def grid-template (file->seq "aoc2020/day3/input.txt")) grid-template)
   #_=> ["...........#..#.#.###....#....."
         "...#..#...........#.#...#......"
         "#.....#..#........#...#..##...."
@@ -73,28 +68,28 @@
 
   (def slope-dist {:right 3 :down 1})
 
-  ;; generate the position[row col] sequence
-  (position-s sample-grid slope-dist)
-  #_=> ([0 0] [1 3] [2 6] [3 9] [4 1] [5 4] [6 7] [7 10] [8 2] [9 5] [10 8])
+  ;; generate the position[row col] infinite sequence
+  (position-s slope-dist)
+  #_=> ([0 0] [1 3] [2 6] [3 9] [4 12] ...)
 
-  ;; check the position[row col] in the grid is a tree
-  (tree-at-pos? sample-grid [0 0])
+  ;; check the position[row col] in the grid-template is a tree
+  (tree-at-pos? sample-grid-template [0 0])
   #_=> false
 
-  (tree-at-pos? sample-grid [1 0])
+  (tree-at-pos? sample-grid-template [1 0])
   #_=> true
 
-  (filter (partial tree-at-pos? sample-grid)
+  (filter (partial tree-at-pos? sample-grid-template)
           [[0 0]
            [1 3]
            [2 6]])
   #_=> ([2 6])
 
   ;; filter and count the true result (tree number)
-  (tree-count sample-grid slope-dist)
+  (tree-count sample-grid-template slope-dist)
   #_=> 7
 
-  (tree-count grid slope-dist)
+  (tree-count grid-template slope-dist)
   #_=> 242
 
 
@@ -106,7 +101,7 @@
                      {:right 1 :down 2}])
 
   ;; calculate result of every slope and multiply
-  (product-of-tree-count grid slope-dist-s)
+  (product-of-tree-count grid-template slope-dist-s)
   #_=> 2265549792
 
   )

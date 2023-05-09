@@ -5,45 +5,42 @@
 (defn parse-policy-password-str
   [policy-password-str]
   (let [[policy letter pwd] (str/split policy-password-str #" ")
-        [arg1 arg2] (->> (str/split policy #"-")
-                         (mapv parse-long))
+        [limit1 limit2] (->> (str/split policy #"-")
+                             (mapv parse-long))
         letter (first letter)]
-    {:policy {:arg1   arg1
-              :arg2   arg2
+    {:policy {:limit1 limit1
+              :limit2 limit2
               :letter letter}
      :pwd    pwd}))
 
 (defn valid-password?
-  [policy-password]
-  (let [{:keys [policy pwd]} policy-password
-        {lo     :arg1
-         hi     :arg2
-         letter :letter} policy
-        freqs (frequencies (seq pwd))
+  [{pwd              :pwd
+    {lo     :limit1
+     hi     :limit2
+     letter :letter} :policy}]
+  (let [freqs (frequencies (seq pwd))
         {letter-freq letter :or {letter-freq 0}} freqs]
     (<= lo letter-freq hi)))
 
 (defn count-valid-password
   [policy-password-str-s]
-  (let [policy-password-s (->> policy-password-str-s
-                               (map parse-policy-password-str))]
-    (->> policy-password-s
-         (filter valid-password?)
-         (count))))
+  (->> policy-password-str-s
+       (map parse-policy-password-str)
+       (filter valid-password?)
+       (count)))
 
 
 (defn valid-password?
-  [policy-password]
-  (let [{:keys [policy pwd]} policy-password
-        {pos1   :arg1
-         pos2   :arg2
-         letter :letter} policy
-        [pos1-equal? pos2-equal?] (mapv (fn [pos] (= letter
-                                                     (get pwd (- pos 1))))
-                                        [pos1 pos2])
-        both?   (and pos1-equal? pos2-equal?)
-        either? (or pos1-equal? pos2-equal?)]
-    (and (not both?) either?)))
+  [{pwd              :pwd
+    {pos1   :limit1
+     pos2   :limit2
+     letter :letter} :policy}]
+  (let [[pos1-equal?
+         pos2-equal?] (mapv (fn [pos] (= letter
+                                         (get pwd (- pos 1))))
+                            [pos1 pos2])]
+    (or (and pos1-equal? (not pos2-equal?))
+        (and pos1-equal? (not pos2-equal?)))))
 
 
 
@@ -72,20 +69,20 @@
 
   ;; parse strings into policies and passwords
   (parse-policy-password-str (first sample-policy-password-str-s))
-  #_=> {:policy {:arg1   1,
-                 :arg2   3,
+  #_=> {:policy {:limit1 1,
+                 :limit2 3,
                  :letter \a},
         :pwd    "abcde"}
 
   ;; validate password based on frequency policy
-  (valid-password? {:policy {:arg1   1
-                             :arg2   3
+  (valid-password? {:policy {:limit1 1
+                             :limit2 3
                              :letter \a}
                     :pwd    "abcde"})
   #_=> true
 
-  (valid-password? {:policy {:arg1   1
-                             :arg2   3
+  (valid-password? {:policy {:limit1 1
+                             :limit2 3
                              :letter \z}
                     :pwd    "abcde"})
   #_=> false
@@ -105,14 +102,14 @@
   ;; filter and count the valid passwords
 
   ;; validate password based on position policy
-  (valid-password? {:policy {:arg1   1
-                             :arg2   3
+  (valid-password? {:policy {:limit1 1
+                             :limit2 3
                              :letter \a}
                     :pwd    "abcde"})
   #_=> true
 
-  (valid-password? {:policy {:arg1   1
-                             :arg2   3
+  (valid-password? {:policy {:limit1 1
+                             :limit2 3
                              :letter \a}
                     :pwd    "abade"})
   #_=> false
