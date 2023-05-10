@@ -40,7 +40,7 @@
                                          (get pwd (- pos 1))))
                             [pos1 pos2])]
     (or (and pos1-equal? (not pos2-equal?))
-        (and pos1-equal? (not pos2-equal?)))))
+        (and (not pos1-equal?) pos2-equal?))))
 
 
 

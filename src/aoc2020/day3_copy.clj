@@ -1,33 +1,32 @@
 (ns aoc2020.day3-copy
   (:require [aoc2020.util :refer [file->seq]]))
 
-(defn position-s
-  [slope-dist]
-  (let [row-s (take-nth (slope-dist :down) (range))
-        col-s (take-nth (slope-dist :right) (range))]
-    (map (fn [row col] [row col])
-         row-s
-         col-s)))
+(defn grid-template->grid
+  [grid-template]
+  (mapv (fn [row] (cycle (seq row)))
+        grid-template))
 
-(defn tree-at-pos?
-  [grid-template position]
-  (let [col-number (-> grid-template
-                       (first)
-                       (count))
-        row        (first position)
-        col        (mod (second position) col-number)
-        location   (-> row
-                       grid-template
-                       (get col))]
-    (= \# location)))
+(defn position-s
+  [{slope-right :right
+    slope-down  :down}]
+  (pmap (fn [x]
+          [(* slope-down x) (* slope-right x)])
+        (range)))
+
+(defn value-at-pos
+  [grid [row col]]
+  (let [row-s (take (+ 1 col) (grid row))]
+    (nth row-s col)))
 
 (defn tree-count
   [grid-template slope-dist]
-  (let [row-number (count grid-template)]
+  (let [row-number (count grid-template)
+        grid       (grid-template->grid grid-template)]
     (->> slope-dist
          (position-s)
          (take-while (fn [pos] (< (first pos) row-number)))
-         (filter (partial tree-at-pos? grid-template))
+         (map (partial value-at-pos grid))
+         (filter (fn [value] (= \# value)))
          (count))))
 
 
@@ -68,24 +67,21 @@
 
   (def slope-dist {:right 3 :down 1})
 
+  ;; generate infinite grid
+  (def sample-grid (grid-template->grid sample-grid-template))
+
   ;; generate the position[row col] infinite sequence
   (position-s slope-dist)
   #_=> ([0 0] [1 3] [2 6] [3 9] [4 12] ...)
 
-  ;; check the position[row col] in the grid-template is a tree
-  (tree-at-pos? sample-grid-template [0 0])
-  #_=> false
+  ;; get the value of the position[row col]
+  (value-at-pos sample-grid [0 0])
+  #_=> \.
 
-  (tree-at-pos? sample-grid-template [1 0])
-  #_=> true
+  (value-at-pos sample-grid [1 0])
+  #_=> \#
 
-  (filter (partial tree-at-pos? sample-grid-template)
-          [[0 0]
-           [1 3]
-           [2 6]])
-  #_=> ([2 6])
-
-  ;; filter and count the true result (tree number)
+  ;; filter and count the result (tree number)
   (tree-count sample-grid-template slope-dist)
   #_=> 7
 

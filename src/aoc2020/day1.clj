@@ -11,35 +11,38 @@
   [sum entry]
   (- sum entry))
 
-(defn complement-in-entries?
-  [sum entry entry-s]
-  (-> (complement sum entry)
-      ((partial contains? entry-s))))
-
 (defn two-sum
   "filter x for which both x and its complement are in the sequence"
-  [sum entry-s]
-  (let [entry-s      (set entry-s)
-        entry-result (->> entry-s
-                          (filter (fn [entry]
-                                    (complement-in-entries? sum entry entry-s)))
+  [sum entry-str-s]
+  (let [entry-s      (->> entry-str-s
+                          (parse-entry-str-s)
+                          (set))
+        complement-s (->> entry-s
+                          (map (partial complement sum)))
+        entry-result (->> complement-s
+                          (filter (fn [complement]
+                                    (contains? entry-s complement)))
                           (first))]
     (when entry-result
-      (-> entry-result
-          (partial complement sum)
-          (* entry-result)))))
+      (* entry-result
+         (complement sum entry-result)))))
 
 
 
 
 
 (defn three-sum
-  [sum entry-s]
-  (let [two-sum-result        (fn [entry]
-                                (two-sum (complement sum entry) entry-s))
-        two-sum-result-s      (map two-sum-result entry-s)
+  [sum entry-str-s]
+  (let [entry-s               (->> entry-str-s
+                                   (parse-entry-str-s)
+                                   (set))
+        two-sum-result-s      (->> entry-s
+                                   (map (partial complement sum))
+                                   (map (fn [complement]
+                                          (two-sum complement entry-str-s))))
         product-of-complement (map (fn [entry complement]
-                                     (when complement (* entry complement)))
+                                     (when complement
+                                       (* entry complement)))
                                    entry-s
                                    two-sum-result-s)]
     (->> product-of-complement
@@ -50,15 +53,15 @@
 (comment
 
   ;; sample-input
-  (do (def sample-entries (->> (file->seq "aoc2020/day1/sample-input.txt")
-                               (parse-entry-str-s)))
-      sample-entries)
-  #_=> ["1721" "979" "366" "299" "675" "1456"]
+  (do (def sample-entry-str-s (->> (file->seq "aoc2020/day1/sample-input.txt")
+                                   (parse-entry-str-s)))
+      sample-entry-str-s)
+  #_=> [1721 979 366 299 675 1456]
 
   ;; input
-  (do (def entries (->> (file->seq "aoc2020/day1/input.txt")
-                        (parse-entry-str-s)))
-      entries)
+  (do (def entry-str-s (->> (file->seq "aoc2020/day1/input.txt")
+                            (parse-entry-str-s)))
+      entry-str-s)
   #_=> [1531
         1959
         1344
@@ -71,8 +74,7 @@
 
   ;; decode/parse
   ;; calculate complement
-  ;; filter entry whose complement is in entries
-  ;; calculate product of n and n's complement
+  ;; filter entry whose complement is in entries and calculate product
 
   ;; decode/parse
   (parse-entry-str-s ["-1" "1" "2" "3" "10"])
@@ -86,37 +88,21 @@
         [-1 0 11 1000])
   #_=> [101 100 89 -900]
 
+  ;; filter entries and calculate product
+  (two-sum 10 ["1" "9" "2" "3"])
+  #_=> 9
 
-  ;; filter entry whose complement is in entries
-  (complement-in-entries? 10 1 #{1 2 3 4})
-  #_=> false
-
-  (complement-in-entries? 10 1 #{1 2 3 9})
-  #_=> true
-
-  (filter (fn [entry]
-            (complement-in-entries? 10 entry entry-s))
-          #{1 2 3 9})
-  #_=> (1 9)
-
-  (filter (fn [entry]
-            (complement-in-entries? 10 entry entry-s))
-          #{1 2 3 4})
-  #_=> ()
-
-  ;; calculate product of n and n's complement
-  (two-sum 2020 sample-entries)
+  (two-sum 2020 sample-entry-str-s)
   #_=> 514579
 
-  (two-sum 2020 entries)
+  (two-sum 2020 entry-str-s)
   #_=> 567171
 
 
   ;; part 2
 
   ;; calculate product of complements using two-sum
-  ;; calculate n * product of complements (ignore nil)
-  ;; filter valid result
+  ;; calculate product and filter non-nil result
 
   ;; three-sum
   (three-sum 2020 sample-entries)
@@ -153,5 +139,25 @@
   ;                     (filter (fn [n] (second n)))
   ;                     (first))]
   ;    (* (first res-num) (second res-num))))
+
+
+  ;
+  ;(defn complement-in-entries?
+  ;  [sum entry entry-s]
+  ;  (-> (complement sum entry)
+  ;      ((partial contains? entry-s))))
+  ;
+  ;(defn two-sum
+  ;  "filter x for which both x and its complement are in the sequence"
+  ;  [sum entry-s]
+  ;  (let [entry-s      (set entry-s)
+  ;        entry-result (->> entry-s
+  ;                          (filter (fn [entry]
+  ;                                    (complement-in-entries? sum entry entry-s)))
+  ;                          (first))]
+  ;    (when entry-result
+  ;      (-> entry-result
+  ;          (partial complement sum)
+  ;          (* entry-result)))))
 
   )
