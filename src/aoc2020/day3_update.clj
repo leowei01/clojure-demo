@@ -7,16 +7,16 @@
         grid-template))
 
 (defn position-s
-  [{slope-right :right
-    slope-down  :down}]
+  [{:keys [slope-right slope-down]}]
   (pmap (fn [x]
           [(* slope-down x) (* slope-right x)])
         (range)))
 
 (defn value-at-pos
   [grid [row col]]
-  (let [row-s (take (+ 1 col) (grid row))]
-    (nth row-s col)))
+  (-> row
+      (grid)
+      (nth col)))
 
 (defn tree-count
   [grid-template slope-dist]
@@ -40,6 +40,8 @@
 
 
 (comment
+  ;; https://adventofcode.com/2020/day/3
+
   (do (def sample-grid-template (file->seq "aoc2020/day3/sample-input.txt")) sample-grid-template)
   #_=> ["..##......."
         "#...#...#.."
@@ -65,14 +67,18 @@
 
   ;; part 1
 
-  (def slope-dist {:right 3 :down 1})
+  (def slope-dist {:slope-right 3 :slope-down 1})
 
   ;; generate infinite grid
   (def sample-grid (grid-template->grid sample-grid-template))
 
   ;; generate the position[row col] infinite sequence
   (position-s slope-dist)
-  #_=> ([0 0] [1 3] [2 6] [3 9] [4 12] ...)
+  #_=> ([0 0] [1 3] [2 6] [3 9] [4 12],,,,)
+
+  (do (def pos-s (take 10 (position-s slope-dist)))
+      pos-s)
+  #_=> ([0 0] [1 3] [2 6] [3 9] [4 12] [5 15] [6 18] [7 21] [8 24] [9 27])
 
   ;; get the value of the position[row col]
   (value-at-pos sample-grid [0 0])
@@ -81,7 +87,10 @@
   (value-at-pos sample-grid [1 0])
   #_=> \#
 
-  ;; filter and count the result (tree number)
+  (map (partial value-at-pos sample-grid) pos-s)
+  #_=> (\. \. \# \. \# \# \. \# \# \#)
+
+  ;; filter and count the tree (tree-count is the main function)
   (tree-count sample-grid-template slope-dist)
   #_=> 7
 
@@ -90,14 +99,28 @@
 
 
   ;; part 2
-  (def slope-dist-s [{:right 1 :down 1}
-                     {:right 3 :down 1}
-                     {:right 5 :down 1}
-                     {:right 7 :down 1}
-                     {:right 1 :down 2}])
+  (def slope-dist-s [{:slope-right 1 :slope-down 1}
+                     {:slope-right 3 :slope-down 1}
+                     {:slope-right 5 :slope-down 1}
+                     {:slope-right 7 :slope-down 1}
+                     {:slope-right 1 :slope-down 2}])
 
   ;; calculate result of every slope and multiply
   (product-of-tree-count grid-template slope-dist-s)
   #_=> 2265549792
+
+  ;; use infinite map and pos-s instead of finite map and mod
+  ;; infinite sequence must be lazy-seq, if use map for lazy-seq, it will immediately evaluate, use pmap
+  ;; destructure parameter
+  ;; Build functions horizontally:
+  ;; (->> a
+  ;     b
+  ;     c)
+  ;
+  ;instead of
+  ;
+  ;(defn a [] (...))
+  ;(defn b [] (a ....))
+  ;(defn c [] (b ...))
 
   )
