@@ -31,7 +31,7 @@
   [consumer-config]
   (let [consumer (new KafkaConsumer consumer-config)
         topic    (consumer-config "topic")
-        _        (.subscribe consumer topic)]
+        _        (.subscribe consumer [topic])]
     consumer))
 
 (defn send-msg!
@@ -58,35 +58,28 @@
 
 
 
-
-
 (comment
 
-  configs
-  #_=> #_#object[clojure.lang.Atom
-                 0x4f73a5d5
-                 {:status :ready,
-                  :val    {:producer-config {"value.serializer"  org.apache.kafka.common.serialization.StringSerializer,
-                                             "key.serializer"    org.apache.kafka.common.serialization.StringSerializer,
-                                             "client.id"         "m-w1kx3xw0nr",
-                                             "bootstrap.servers" "localhost:9092",
-                                             "acks"              "all"},
-                           :consumer-config {"group.id"           "My-Group",
-                                             "key.deserializer"   org.apache.kafka.common.serialization.StringDeserializer,
-                                             "value.deserializer" org.apache.kafka.common.serialization.StringDeserializer,
-                                             "client.id"          "m-w1kx3xw0nr",
-                                             "bootstrap.servers"  "localhost:9092"}}}]
+  @configs
+  #_=> {:producer-config {"value.serializer"  org.apache.kafka.common.serialization.StringSerializer,
+                          "key.serializer"    org.apache.kafka.common.serialization.StringSerializer,
+                          "client.id"         "m-w1kx3xw0nr",
+                          "bootstrap.servers" "localhost:9092",
+                          "acks"              "all"},
+        :consumer-config {"group.id"           "My-Group",
+                          "key.deserializer"   org.apache.kafka.common.serialization.StringDeserializer,
+                          "value.deserializer" org.apache.kafka.common.serialization.StringDeserializer,
+                          "client.id"          "m-w1kx3xw0nr",
+                          "bootstrap.servers"  "localhost:9092",
+                          "topic"              "demo"}}
 
-  clients
-  #_=> #_#object[clojure.lang.Atom
-                 0x675887e5
-                 {:status :ready,
-                  :val    {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
-                                             0x63003cec
-                                             "org.apache.kafka.clients.producer.KafkaProducer@63003cec"],
-                           :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
-                                             0x33adbd3d
-                                             "org.apache.kafka.clients.consumer.KafkaConsumer@33adbd3d"]}}]
+  @clients
+  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
+                          0x24434662
+                          "org.apache.kafka.clients.producer.KafkaProducer@24434662"],
+        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
+                          0x611b5f2d
+                          "org.apache.kafka.clients.consumer.KafkaConsumer@611b5f2d"]}
 
   (build-producer (@configs :producer-config))
   #_=> #_#object[org.apache.kafka.clients.producer.KafkaProducer
