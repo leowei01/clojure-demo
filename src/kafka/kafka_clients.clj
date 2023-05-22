@@ -4,6 +4,8 @@
            (org.apache.kafka.clients.consumer KafkaConsumer)
            (java.time Duration)))
 
+(declare build-producer build-consumer)
+
 (def configs
   (atom {:producer-config {"value.serializer"  StringSerializer
                            "key.serializer"    StringSerializer
@@ -14,45 +16,43 @@
                            "key.deserializer"   StringDeserializer
                            "value.deserializer" StringDeserializer
                            "client.id"          "m-w1kx3xw0nr"
-                           "bootstrap.servers"  "localhost:9092"}}))
-
-(defn build-producer
-  [configs]
-  (let [producer-config (@configs :producer-config)]
-    (new KafkaProducer producer-config)))
-
-(defn build-consumer
-  [configs]
-  (let [consumer-config (@configs :consumer-config)
-        consumer        (new KafkaConsumer consumer-config)
-        _               (.subscribe consumer ["demo"])]
-    consumer))
+                           "bootstrap.servers"  "localhost:9092"
+                           "topic"              "demo"}}))
 
 (def clients
-  (atom {:producer (build-producer configs)
-         :consumer (build-consumer configs)}))
+  (atom {:producer (build-producer (@configs :producer-config))
+         :consumer (build-consumer (@configs :consumer-config))}))
+
+(defn build-producer
+  [producer-config]
+  (new KafkaProducer producer-config))
+
+(defn build-consumer
+  [consumer-config]
+  (let [consumer (new KafkaConsumer consumer-config)
+        topic    (consumer-config "topic")
+        _        (.subscribe consumer topic)]
+    consumer))
 
 (defn send-msg!
-  [clients topic value]
-  (let [producer (@clients :producer)
-        record   (new ProducerRecord topic value)]
+  [producer topic value]
+  (let [record (new ProducerRecord topic value)]
     (.send producer record)))
 
 (defn read-msg!
-  [clients]
-  (let [consumer (@clients :consumer)
-        record-s (.poll consumer (Duration/ofMillis 100))
+  [consumer]
+  (let [record-s (.poll consumer (Duration/ofMillis 100))
         value-s  (mapv (fn [record]
                          (.value record))
                        record-s)
         _        (.commitAsync consumer)]
     value-s))
 
-(defn setup-clients-with-replacement-producer!
+(defn update-producer-client!
   [clients replacement-producer]
   (swap! clients assoc :producer replacement-producer))
 
-(defn setup-clients-with-replacement-consumer!
+(defn update-consumer-client!
   [clients replacement-consumer]
   (swap! clients assoc :consumer replacement-consumer))
 
@@ -77,16 +77,6 @@
                                              "client.id"          "m-w1kx3xw0nr",
                                              "bootstrap.servers"  "localhost:9092"}}}]
 
-  (build-producer configs)
-  #_=> #_#object[org.apache.kafka.clients.producer.KafkaProducer
-                 0x53c5e34f
-                 "org.apache.kafka.clients.producer.KafkaProducer@53c5e34f"]
-
-  (build-consumer configs)
-  #_=> #_#object[org.apache.kafka.clients.consumer.KafkaConsumer
-                 0x186c605f
-                 "org.apache.kafka.clients.consumer.KafkaConsumer@186c605f"]
-
   clients
   #_=> #_#object[clojure.lang.Atom
                  0x675887e5
@@ -98,18 +88,28 @@
                                              0x33adbd3d
                                              "org.apache.kafka.clients.consumer.KafkaConsumer@33adbd3d"]}}]
 
+  (build-producer (@configs :producer-config))
+  #_=> #_#object[org.apache.kafka.clients.producer.KafkaProducer
+                 0x53c5e34f
+                 "org.apache.kafka.clients.producer.KafkaProducer@53c5e34f"]
+
+  (build-consumer (@configs :consumer-config))
+  #_=> #_#object[org.apache.kafka.clients.consumer.KafkaConsumer
+                 0x186c605f
+                 "org.apache.kafka.clients.consumer.KafkaConsumer@186c605f"]
+
   ;; producer send record
-  (send-msg! clients "demo" "Hello world!")
+  (send-msg! (@clients :producer) "demo" "Hello world!")
   #_=> #_#object[org.apache.kafka.clients.producer.internals.FutureRecordMetadata
                  0xde5318c
                  "org.apache.kafka.clients.producer.internals.FutureRecordMetadata@de5318c"]
 
   ;; consumer receive message
-  (read-msg! clients)
+  (read-msg! (@clients :consumer))
   #_=> ["Hello world!"]
 
   ;; setup clients with new producer
-  (setup-clients-with-replacement-producer! clients (build-producer configs))
+  (update-producer-client! clients (build-producer (@configs :producer-config)))
   #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
                           0x730fadc1
                           "org.apache.kafka.clients.producer.KafkaProducer@730fadc1"],
@@ -118,7 +118,7 @@
                           "org.apache.kafka.clients.consumer.KafkaConsumer@35a3713e"]}
 
   ;; setup clients with new consumer
-  (setup-clients-with-replacement-consumer! clients (build-consumer configs))
+  (update-consumer-client! clients (build-consumer (@configs :consumer-config)))
   #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
                           0x4801c356
                           "org.apache.kafka.clients.producer.KafkaProducer@4801c356"],
