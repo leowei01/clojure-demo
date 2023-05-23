@@ -56,8 +56,11 @@
 
 (comment
 
-  (mount/start)
-  #_=> {:started ["#'kafka.kafka-clients-with-mount/configs" "#'kafka.kafka-clients-with-mount/clients"]}
+  (mount/start #'configs)
+  #_=> {:started ["#'kafka.kafka-clients-with-mount/configs"]}
+
+  (mount/start #'clients)
+  #_=> {:started ["#'kafka.kafka-clients-with-mount/clients"]}
 
   configs
   #_=> {:producer-config {"value.serializer"  org.apache.kafka.common.serialization.StringSerializer,
