@@ -4,8 +4,6 @@
            (org.apache.kafka.clients.consumer KafkaConsumer)
            (java.time Duration)))
 
-(declare build-producer build-consumer)
-
 (def configs
   (atom {:producer-config {"value.serializer"  StringSerializer
                            "key.serializer"    StringSerializer
@@ -20,8 +18,8 @@
                            "topic"              "demo"}}))
 
 (def clients
-  (atom {:producer (build-producer (@configs :producer-config))
-         :consumer (build-consumer (@configs :consumer-config))}))
+  (atom {:producer nil
+         :consumer nil}))
 
 (defn build-producer
   [producer-config]
@@ -33,6 +31,14 @@
         topic    (consumer-config "topic")
         _        (.subscribe consumer [topic])]
     consumer))
+
+(defn update-producer-client!
+  [clients replacement-producer]
+  (swap! clients assoc :producer replacement-producer))
+
+(defn update-consumer-client!
+  [clients replacement-consumer]
+  (swap! clients assoc :consumer replacement-consumer))
 
 (defn send-msg!
   [producer topic value]
@@ -47,14 +53,6 @@
                        record-s)
         _        (.commitAsync consumer)]
     value-s))
-
-(defn update-producer-client!
-  [clients replacement-producer]
-  (swap! clients assoc :producer replacement-producer))
-
-(defn update-consumer-client!
-  [clients replacement-consumer]
-  (swap! clients assoc :consumer replacement-consumer))
 
 
 
@@ -74,22 +72,35 @@
                           "topic"              "demo"}}
 
   @clients
-  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
-                          0x24434662
-                          "org.apache.kafka.clients.producer.KafkaProducer@24434662"],
-        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
-                          0x611b5f2d
-                          "org.apache.kafka.clients.consumer.KafkaConsumer@611b5f2d"]}
+  #_=> {:producer nil, :consumer nil}
 
-  (build-producer (@configs :producer-config))
+  (do (def producer (build-producer (@configs :producer-config)))
+      producer)
   #_=> #_#object[org.apache.kafka.clients.producer.KafkaProducer
                  0x53c5e34f
                  "org.apache.kafka.clients.producer.KafkaProducer@53c5e34f"]
 
-  (build-consumer (@configs :consumer-config))
+  (do (def consumer (build-consumer (@configs :consumer-config)))
+      consumer)
   #_=> #_#object[org.apache.kafka.clients.consumer.KafkaConsumer
                  0x186c605f
                  "org.apache.kafka.clients.consumer.KafkaConsumer@186c605f"]
+
+  ;; setup clients with new producer
+  (update-producer-client! clients producer)
+  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
+                          0x4e126a30
+                          "org.apache.kafka.clients.producer.KafkaProducer@4e126a30"],
+        :consumer nil}
+
+  ;; setup clients with new consumer
+  (update-consumer-client! clients consumer)
+  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
+                          0x4e126a30
+                          "org.apache.kafka.clients.producer.KafkaProducer@4e126a30"],
+        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
+                          0x3ffcf28e
+                          "org.apache.kafka.clients.consumer.KafkaConsumer@3ffcf28e"]}
 
   ;; producer send record
   (send-msg! (@clients :producer) "demo" "Hello world!")
@@ -100,24 +111,6 @@
   ;; consumer receive message
   (read-msg! (@clients :consumer))
   #_=> ["Hello world!"]
-
-  ;; setup clients with new producer
-  (update-producer-client! clients (build-producer (@configs :producer-config)))
-  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
-                          0x730fadc1
-                          "org.apache.kafka.clients.producer.KafkaProducer@730fadc1"],
-        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
-                          0x35a3713e
-                          "org.apache.kafka.clients.consumer.KafkaConsumer@35a3713e"]}
-
-  ;; setup clients with new consumer
-  (update-consumer-client! clients (build-consumer (@configs :consumer-config)))
-  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
-                          0x4801c356
-                          "org.apache.kafka.clients.producer.KafkaProducer@4801c356"],
-        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
-                          0x13aad972
-                          "org.apache.kafka.clients.consumer.KafkaConsumer@13aad972"]}
 
   )
 
