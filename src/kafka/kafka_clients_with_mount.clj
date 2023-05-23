@@ -1,4 +1,4 @@
-(ns kafka.kafka-clients-copy
+(ns kafka.kafka-clients-with-mount
   (:require [mount.core :as mount :refer [defstate]])
   (:import (org.apache.kafka.clients.producer KafkaProducer ProducerRecord)
            (org.apache.kafka.common.serialization StringSerializer StringDeserializer)
