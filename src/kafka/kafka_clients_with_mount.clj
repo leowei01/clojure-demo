@@ -5,7 +5,7 @@
            (org.apache.kafka.clients.consumer KafkaConsumer)
            (java.time Duration)))
 
-(declare build-producer! build-consumer!)
+(declare build-producer build-consumer)
 
 (defstate configs :start {:producer-config {"value.serializer"  StringSerializer
                                             "key.serializer"    StringSerializer
@@ -19,18 +19,15 @@
                                             "bootstrap.servers"  "localhost:9092"
                                             "topic"              "demo"}})
 
-(def counter (atom 0))
+(defstate clients :start {:producer         (build-producer (configs :producer-config))
+                          :producer-counter (atom 0)
+                          :consumer         (build-consumer (configs :consumer-config))})
 
-(defstate clients :start {:producer (build-producer! (configs :producer-config) counter)
-                          :consumer (build-consumer! (configs :consumer-config))})
+(defn build-producer
+  [producer-config]
+  (new KafkaProducer producer-config))
 
-(defn build-producer!
-  [producer-config counter]
-  (let [_        (reset! counter 0)
-        producer (new KafkaProducer producer-config)]
-    producer))
-
-(defn build-consumer!
+(defn build-consumer
   [consumer-config]
   (let [consumer (new KafkaConsumer consumer-config)
         topic    (consumer-config "topic")
@@ -38,9 +35,9 @@
     consumer))
 
 (defn send-msg!
-  [producer topic value counter]
+  [producer topic value]
   (let [record (new ProducerRecord topic value)
-        _      (swap! counter inc)]
+        _      (swap! (clients :producer-counter) inc)]
     (.send producer record)))
 
 (defn read-msg!
@@ -56,8 +53,11 @@
 
 (comment
 
-  (mount/start)
-  #_=> {:started ["#'kafka.kafka-clients-with-mount/configs" "#'kafka.kafka-clients-with-mount/clients"]}
+  (mount/start #'configs)
+  #_=> {:started ["#'kafka.kafka-clients-with-mount/configs"]}
+
+  (mount/start #'clients)
+  #_=> {:started ["#'kafka.kafka-clients-with-mount/clients"]}
 
   configs
   #_=> {:producer-config {"value.serializer"  org.apache.kafka.common.serialization.StringSerializer,
@@ -72,38 +72,42 @@
                           "bootstrap.servers"  "localhost:9092",
                           "topic"              "demo"}}
 
-  @counter
-  #_=> 0
-
   clients
-  #_=> {:producer #object[org.apache.kafka.clients.producer.KafkaProducer
-                          0x19848ca7
-                          "org.apache.kafka.clients.producer.KafkaProducer@19848ca7"],
-        :consumer #object[org.apache.kafka.clients.consumer.KafkaConsumer
-                          0x5e8a9ca7
-                          "org.apache.kafka.clients.consumer.KafkaConsumer@5e8a9ca7"]}
+  #_=> {:producer         #object[org.apache.kafka.clients.producer.KafkaProducer
+                                  0x19848ca7
+                                  "org.apache.kafka.clients.producer.KafkaProducer@19848ca7"],
+        :producer-counter #object[clojure.lang.Atom 0x787cec6b {:status :ready, :val 0}],
+        :consumer         #object[org.apache.kafka.clients.consumer.KafkaConsumer
+                                  0x5e8a9ca7
+                                  "org.apache.kafka.clients.consumer.KafkaConsumer@5e8a9ca7"]}
 
 
-  (do (def producer (build-producer! (configs :producer-config) counter))
+  (do (def producer (build-producer (configs :producer-config)))
       producer)
   #_=> #_#object[org.apache.kafka.clients.producer.KafkaProducer
                  0x53c5e34f
                  "org.apache.kafka.clients.producer.KafkaProducer@53c5e34f"]
 
-  (do (def consumer (build-consumer! (configs :consumer-config)))
+  (do (def consumer (build-consumer (configs :consumer-config)))
       consumer)
   #_=> #_#object[org.apache.kafka.clients.consumer.KafkaConsumer
                  0x186c605f
                  "org.apache.kafka.clients.consumer.KafkaConsumer@186c605f"]
 
   ;; producer send record
-  (send-msg! (clients :producer) "demo" "Hello world!" counter)
+  (send-msg! (clients :producer) "demo" "Hello world!")
   #_=> #_#object[org.apache.kafka.clients.producer.internals.FutureRecordMetadata
                  0xde5318c
                  "org.apache.kafka.clients.producer.internals.FutureRecordMetadata@de5318c"]
 
-  @counter
-  #_=> 1
+  clients
+  #_=> {:producer         #object[org.apache.kafka.clients.producer.KafkaProducer
+                                  0x19848ca7
+                                  "org.apache.kafka.clients.producer.KafkaProducer@19848ca7"],
+        :producer-counter #object[clojure.lang.Atom 0x787cec6b {:status :ready, :val 1}],
+        :consumer         #object[org.apache.kafka.clients.consumer.KafkaConsumer
+                                  0x5e8a9ca7
+                                  "org.apache.kafka.clients.consumer.KafkaConsumer@5e8a9ca7"]}
 
   ;; consumer receive message
   (read-msg! (clients :consumer))
